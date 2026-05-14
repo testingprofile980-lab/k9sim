@@ -1,0 +1,20 @@
+.commandbar {
+  position: absolute;
+  bottom: 24px;
+  left: 0;
+  right: 0;
+  background: var(--bg-secondary);
+  border-top: 1px solid var(--border);
+  z-index: 50;
+}
+
+.input {
+  width: 100%;
+  padding: 4px 8px;
+  background: transparent;
+  border: none;
+  color: var(--text-bright);
+  font-size: 13px;
+  font-family: var(--font-mono);
+  outline: none;
+}

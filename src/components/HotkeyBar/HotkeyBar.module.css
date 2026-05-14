@@ -1,0 +1,33 @@
+.hotkeybar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 2px 8px;
+  padding: 2px 8px;
+  background: var(--bg-secondary);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+  font-size: 11px;
+}
+
+.hotkey {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.kbd {
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border);
+  border-radius: 2px;
+  padding: 0 4px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--accent);
+  white-space: nowrap;
+}
+
+.label {
+  color: var(--text-muted);
+  white-space: nowrap;
+}

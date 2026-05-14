@@ -1,0 +1,92 @@
+@import './tokens.css';
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body, #root {
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-mono);
+  font-size: var(--font-size);
+  line-height: var(--line-height);
+  -webkit-font-smoothing: antialiased;
+}
+
+button {
+  font-family: var(--font-mono);
+  font-size: var(--font-size);
+  cursor: pointer;
+}
+
+input, textarea {
+  font-family: var(--font-mono);
+  font-size: var(--font-size);
+  background: var(--bg-secondary);
+  color: var(--text-bright);
+  border: 1px solid var(--border);
+  outline: none;
+}
+
+textarea {
+  resize: vertical;
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-muted);
+}
+
+.status-running    { color: var(--green); }
+.status-pending    { color: var(--yellow); }
+.status-error      { color: var(--red); }
+.status-crash      { color: var(--red); }
+.status-oomkilled  { color: var(--orange); }
+.status-evicted    { color: var(--orange); }
+.status-imagepull  { color: var(--yellow); }
+.status-terminating { color: var(--text-muted); }
+.status-unknown    { color: var(--text-muted); }
+.status-completed  { color: var(--text-muted); }
+
+/* Mobile fallback */
+.mobile-message {
+  display: none;
+}
+
+@media (max-width: 599px) {
+  .k9s-root {
+    display: none !important;
+  }
+  .mobile-message {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+    padding: 2rem;
+    text-align: center;
+    color: var(--text-muted);
+    font-family: var(--font-mono);
+    font-size: 14px;
+  }
+}

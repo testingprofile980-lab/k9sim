@@ -1,0 +1,66 @@
+.topbar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 8px;
+  background: var(--bg-secondary);
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+  overflow: hidden;
+  flex-shrink: 0;
+  font-size: 12px;
+}
+
+.label {
+  color: var(--text-muted);
+  margin-right: 3px;
+}
+
+.value {
+  color: var(--text-bright);
+  font-weight: bold;
+}
+
+.nsValue {
+  color: var(--text-ns);
+  font-weight: bold;
+}
+
+.sep {
+  color: var(--border);
+}
+
+.sep2 {
+  color: var(--border);
+}
+
+.spacer {
+  flex: 1;
+}
+
+.metric {
+  display: flex;
+  align-items: center;
+}
+
+.metricValue {
+  color: var(--accent);
+}
+
+.podCounts {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.running {
+  color: var(--green);
+}
+
+.pendingCount {
+  color: var(--yellow);
+}
+
+.errorCount {
+  color: var(--red);
+}

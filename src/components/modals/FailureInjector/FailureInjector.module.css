@@ -1,0 +1,70 @@
+.overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+}
+
+.modal {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  width: 500px;
+  max-width: 90vw;
+  max-height: 85vh;
+  overflow-y: auto;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--border);
+}
+
+.title { color: var(--text-bright); font-weight: bold; font-size: 13px; }
+.target { color: var(--text-ns); font-size: 12px; }
+.close { background: transparent; border: none; color: var(--text-muted); cursor: pointer; font-size: 14px; }
+
+.body { padding: 8px; display: flex; flex-direction: column; gap: 4px; }
+
+.note { color: var(--text-muted); padding: 12px; font-size: 12px; }
+
+.failureBtn {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  padding: 10px 12px;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 3px;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.1s, border-color 0.1s;
+}
+
+.failureBtn:hover:not(:disabled) {
+  background: var(--bg-hover);
+  border-color: var(--border);
+}
+
+.failureBtn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.failureLabel {
+  color: var(--red);
+  font-weight: bold;
+  font-size: 12px;
+}
+
+.failureDesc {
+  color: var(--text-muted);
+  font-size: 11px;
+}
