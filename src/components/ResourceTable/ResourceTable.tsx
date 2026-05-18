@@ -1,3 +1,4 @@
+import { useStore } from '../../store';
 import styles from './ResourceTable.module.css';
 
 export interface Column<T> {
@@ -8,7 +9,7 @@ export interface Column<T> {
   hideTablet?: boolean;
 }
 
-interface Props<T> {
+interface Props<T extends { id: string }> {
   columns: Column<T>[];
   rows: T[];
   selectedIndex: number;
@@ -17,7 +18,9 @@ interface Props<T> {
   rowKey: (row: T) => string;
 }
 
-export function ResourceTable<T>({ columns, rows, selectedIndex, onSelect, onActivate, rowKey }: Props<T>) {
+export function ResourceTable<T extends { id: string }>({ columns, rows, selectedIndex, onSelect, onActivate, rowKey }: Props<T>) {
+  const markedIds = useStore((s) => s.markedIds);
+
   if (rows.length === 0) {
     return <div className={styles.empty}>No resources found.</div>;
   }
@@ -39,23 +42,27 @@ export function ResourceTable<T>({ columns, rows, selectedIndex, onSelect, onAct
           </tr>
         </thead>
         <tbody>
-          {rows.map((row, idx) => (
-            <tr
-              key={rowKey(row)}
-              className={`${styles.tr} ${idx === selectedIndex ? styles.selected : ''}`}
-              onClick={() => onSelect(idx)}
-              onDoubleClick={() => onActivate?.(idx)}
-            >
-              {columns.map((col) => (
-                <td
-                  key={col.key}
-                  className={`${styles.td} ${col.hideTablet ? styles.hideTablet : ''}`}
-                >
-                  {col.render(row)}
-                </td>
-              ))}
-            </tr>
-          ))}
+          {rows.map((row, idx) => {
+            const isMarked = markedIds.has(row.id);
+            return (
+              <tr
+                key={rowKey(row)}
+                className={`${styles.tr} ${idx === selectedIndex ? styles.selected : ''} ${isMarked ? styles.marked : ''}`}
+                onClick={() => onSelect(idx)}
+                onDoubleClick={() => onActivate?.(idx)}
+              >
+                {columns.map((col, colIdx) => (
+                  <td
+                    key={col.key}
+                    className={`${styles.td} ${col.hideTablet ? styles.hideTablet : ''}`}
+                  >
+                    {colIdx === 0 && isMarked && <span className={styles.markIndicator}>▸ </span>}
+                    {col.render(row)}
+                  </td>
+                ))}
+              </tr>
+            );
+          })}
         </tbody>
       </table>
     </div>

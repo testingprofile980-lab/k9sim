@@ -6,8 +6,18 @@ interface HotkeyDef {
   label: string;
 }
 
+const NAV: HotkeyDef[] = [
+  { key: '↑↓ j/k', label: 'nav' },
+  { key: 'g/G', label: 'top/bot' },
+  { key: '/', label: 'filter' },
+  { key: ':', label: 'cmd' },
+  { key: '?', label: 'help' },
+  { key: '0-5', label: 'ns' },
+  { key: 'space', label: 'mark' },
+];
+
 const podKeys: HotkeyDef[] = [
-  { key: '↑↓', label: 'navigate' },
+  ...NAV,
   { key: 'l', label: 'logs' },
   { key: 'd', label: 'describe' },
   { key: 'y', label: 'yaml' },
@@ -15,45 +25,51 @@ const podKeys: HotkeyDef[] = [
   { key: 'x', label: 'delete' },
   { key: 'r', label: 'restart' },
   { key: 's', label: 'shell' },
-  { key: 'shift+f', label: 'port-fwd' },
-  { key: 'n', label: 'new pod' },
-  { key: 'f', label: 'inject failure' },
-  { key: '/', label: 'filter' },
-  { key: ':', label: 'cmd' },
-  { key: '?', label: 'help' },
+  { key: '⇧f', label: 'port-fwd' },
+  { key: 'n', label: 'new' },
+  { key: 'f', label: 'inject' },
 ];
 
 const deployKeys: HotkeyDef[] = [
-  { key: '↑↓', label: 'navigate' },
+  ...NAV,
   { key: 'd', label: 'describe' },
   { key: 'y', label: 'yaml' },
   { key: 'e', label: 'edit' },
   { key: 's', label: 'scale' },
   { key: 'r', label: 'rollout' },
   { key: 'x', label: 'delete' },
-  { key: '/', label: 'filter' },
-  { key: ':', label: 'cmd' },
-  { key: '?', label: 'help' },
 ];
 
 const svcKeys: HotkeyDef[] = [
-  { key: '↑↓', label: 'navigate' },
+  ...NAV,
   { key: 'd', label: 'describe' },
   { key: 'y', label: 'yaml' },
   { key: 'e', label: 'edit' },
-  { key: 'shift+f', label: 'port-fwd' },
-  { key: 'x', label: 'delete' },
-  { key: '/', label: 'filter' },
+  { key: '⇧f', label: 'port-fwd' },
+];
+
+const nodeKeys: HotkeyDef[] = [
+  ...NAV,
+  { key: 'd', label: 'describe' },
+  { key: 'y', label: 'yaml' },
+  { key: 'c', label: 'cordon' },
+];
+
+const genericKeys: HotkeyDef[] = [
+  ...NAV,
+  { key: 'd', label: 'describe' },
+  { key: 'y', label: 'yaml' },
+  { key: 'e', label: 'edit' },
+];
+
+const pulseKeys: HotkeyDef[] = [
+  { key: '⌃r', label: 'refresh' },
   { key: ':', label: 'cmd' },
   { key: '?', label: 'help' },
 ];
 
-const genericKeys: HotkeyDef[] = [
-  { key: '↑↓', label: 'navigate' },
-  { key: 'd', label: 'describe' },
-  { key: 'y', label: 'yaml' },
-  { key: 'x', label: 'delete' },
-  { key: '/', label: 'filter' },
+const xrayKeys: HotkeyDef[] = [
+  { key: 'click', label: 'expand' },
   { key: ':', label: 'cmd' },
   { key: '?', label: 'help' },
 ];
@@ -66,20 +82,20 @@ export function HotkeyBar() {
     ? [
         { key: 'Esc', label: 'close' },
         { key: '↑↓', label: 'scroll' },
-        ...(activePanel === 'editor' ? [{ key: 'Ctrl+S', label: 'save' }] : []),
+        ...(activePanel === 'editor' ? [{ key: '⌃s', label: 'save' }] : []),
+        ...(activePanel === 'logs' ? [{ key: 'w', label: 'wrap' }, { key: 'c', label: 'clear' }] : []),
       ]
     : [];
 
-  const viewKeys =
-    activePanel
-      ? panelKeys
-      : activeView === 'pods'
-      ? podKeys
-      : activeView === 'deployments'
-      ? deployKeys
-      : activeView === 'services'
-      ? svcKeys
-      : genericKeys;
+  let viewKeys: HotkeyDef[];
+  if (activePanel) viewKeys = panelKeys;
+  else if (activeView === 'pods') viewKeys = podKeys;
+  else if (activeView === 'deployments') viewKeys = deployKeys;
+  else if (activeView === 'services') viewKeys = svcKeys;
+  else if (activeView === 'nodes') viewKeys = nodeKeys;
+  else if (activeView === 'pulse') viewKeys = pulseKeys;
+  else if (activeView === 'xray') viewKeys = xrayKeys;
+  else viewKeys = genericKeys;
 
   return (
     <div className={styles.hotkeybar}>

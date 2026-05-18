@@ -1,13 +1,30 @@
 import { create } from 'zustand';
 import type {
   Pod, Deployment, Service, Node, Namespace, ViewType, PanelType, ModalType,
-  Toast, FailureType, K8sEvent,
+  Toast, FailureType, K8sEvent, ConfigMap, Secret, StatefulSet, DaemonSet,
+  Job, CronJob, Ingress, PersistentVolume, PersistentVolumeClaim, ReplicaSet,
+  HPA, ServiceAccount, NetworkPolicy, PodDisruptionBudget, RoleBinding,
+  ClusterRole, ClusterRoleBinding, HelmRelease, Context, PopeyeIssue,
 } from '../types';
-import { initialPods, initialDeployments, initialServices, initialNodes, initialNamespaces } from '../data/initialCluster';
+import {
+  initialPods, initialDeployments, initialServices, initialNodes, initialNamespaces,
+  initialConfigMaps, initialSecrets, initialStatefulSets, initialDaemonSets,
+  initialJobs, initialCronJobs, initialIngress, initialPVs, initialPVCs,
+  initialReplicaSets, initialHPAs, initialServiceAccounts, initialNetworkPolicies,
+  initialPDBs, initialRoleBindings, initialClusterRoles, initialClusterRoleBindings,
+  initialHelm, initialContexts, initialPopeye, initialClusterEvents,
+} from '../data/initialCluster';
 import { scenarios } from '../data/scenarios';
 
 let toastCounter = 0;
 const genId = () => `${Date.now()}-${++toastCounter}`;
+
+function fmtAge(seconds: number): string {
+  if (seconds < 60) return `${Math.floor(seconds)}s`;
+  if (seconds < 3600) return `${Math.floor(seconds / 60)}m`;
+  if (seconds < 86400) return `${Math.floor(seconds / 3600)}h`;
+  return `${Math.floor(seconds / 86400)}d`;
+}
 
 function generateCrashLogs(): string[] {
   return [
@@ -38,6 +55,27 @@ interface ClusterState {
   services: Service[];
   nodes: Node[];
   namespaces: Namespace[];
+  configmaps: ConfigMap[];
+  secrets: Secret[];
+  statefulsets: StatefulSet[];
+  daemonsets: DaemonSet[];
+  jobs: Job[];
+  cronjobs: CronJob[];
+  ingress: Ingress[];
+  pvs: PersistentVolume[];
+  pvcs: PersistentVolumeClaim[];
+  replicasets: ReplicaSet[];
+  hpas: HPA[];
+  serviceaccounts: ServiceAccount[];
+  networkpolicies: NetworkPolicy[];
+  pdbs: PodDisruptionBudget[];
+  rolebindings: RoleBinding[];
+  clusterroles: ClusterRole[];
+  clusterrolebindings: ClusterRoleBinding[];
+  helmReleases: HelmRelease[];
+  contexts: Context[];
+  popeyeIssues: PopeyeIssue[];
+  clusterEvents: K8sEvent[];
 }
 
 interface UIState {
@@ -52,6 +90,9 @@ interface UIState {
   activeNamespace: string;
   toasts: Toast[];
   metricsVersion: number;
+  markedIds: Set<string>;
+  sortKey: string | null;
+  sortDesc: boolean;
 }
 
 interface ScenarioState {
@@ -69,15 +110,19 @@ interface SettingsState {
 
 interface AppStore extends ClusterState, UIState, ScenarioState, SettingsState {
   // cluster actions
-  createPod: (pod: Omit<Pod, 'id' | 'events' | 'logs' | 'age'>) => void;
+  createPod: (pod: Omit<Pod, 'id' | 'events' | 'logs' | 'age' | 'ageSeconds'>) => void;
   deletePod: (id: string) => void;
   restartPod: (id: string) => void;
   injectFailure: (podId: string, failure: FailureType) => void;
   fixPod: (id: string) => void;
   editPodYaml: (id: string, yaml: string) => void;
   scaleDeployment: (id: string, replicas: number) => void;
+  rolloutRestart: (deploymentId: string) => void;
+  cordonNode: (id: string) => void;
+  uncordonNode: (id: string) => void;
   editServiceYaml: (id: string, yaml: string) => void;
   addEvent: (event: K8sEvent) => void;
+  tick: () => void;
 
   // ui actions
   setView: (view: ViewType) => void;
@@ -89,6 +134,10 @@ interface AppStore extends ClusterState, UIState, ScenarioState, SettingsState {
   setActivePanel: (panel: PanelType) => void;
   setActiveModal: (modal: ModalType) => void;
   setActiveNamespace: (ns: string) => void;
+  setContext: (id: string) => void;
+  toggleMark: (id: string) => void;
+  clearMarks: () => void;
+  setSort: (key: string) => void;
   addToast: (message: string, type?: Toast['type']) => void;
   removeToast: (id: string) => void;
   tickMetrics: () => void;
@@ -112,6 +161,27 @@ export const useStore = create<AppStore>((set, get) => ({
   services: initialServices,
   nodes: initialNodes,
   namespaces: initialNamespaces,
+  configmaps: initialConfigMaps,
+  secrets: initialSecrets,
+  statefulsets: initialStatefulSets,
+  daemonsets: initialDaemonSets,
+  jobs: initialJobs,
+  cronjobs: initialCronJobs,
+  ingress: initialIngress,
+  pvs: initialPVs,
+  pvcs: initialPVCs,
+  replicasets: initialReplicaSets,
+  hpas: initialHPAs,
+  serviceaccounts: initialServiceAccounts,
+  networkpolicies: initialNetworkPolicies,
+  pdbs: initialPDBs,
+  rolebindings: initialRoleBindings,
+  clusterroles: initialClusterRoles,
+  clusterrolebindings: initialClusterRoleBindings,
+  helmReleases: initialHelm,
+  contexts: initialContexts,
+  popeyeIssues: initialPopeye,
+  clusterEvents: initialClusterEvents,
 
   // ui
   activeView: 'pods',
@@ -125,6 +195,9 @@ export const useStore = create<AppStore>((set, get) => ({
   activeNamespace: 'all',
   toasts: [],
   metricsVersion: 0,
+  markedIds: new Set(),
+  sortKey: null,
+  sortDesc: false,
 
   // scenario
   activeScenarioId: null,
@@ -133,7 +206,7 @@ export const useStore = create<AppStore>((set, get) => ({
   debriefVisible: false,
 
   // settings
-  autoRefreshInterval: 3000,
+  autoRefreshInterval: 2000,
   showMetrics: true,
   hasSeenWelcome: false,
 
@@ -142,7 +215,8 @@ export const useStore = create<AppStore>((set, get) => ({
     const pod: Pod = {
       ...podData,
       id: `pod-${podData.name}-${Date.now()}`,
-      age: 'just now',
+      age: '0s',
+      ageSeconds: 0,
       events: [
         {
           id: genId(),
@@ -154,6 +228,19 @@ export const useStore = create<AppStore>((set, get) => ({
           firstTime: 'just now',
           lastTime: 'just now',
           involvedObject: podData.name,
+          kind: 'Pod',
+        },
+        {
+          id: genId(),
+          namespace: podData.namespace,
+          reason: 'Pulling',
+          message: `Pulling image "${podData.image}"`,
+          type: 'Normal',
+          count: 1,
+          firstTime: 'just now',
+          lastTime: 'just now',
+          involvedObject: podData.name,
+          kind: 'Pod',
         },
       ],
       logs: [`${new Date().toISOString()}  INFO  Container starting...`],
@@ -181,7 +268,7 @@ export const useStore = create<AppStore>((set, get) => ({
     setTimeout(() => {
       set((s) => ({
         pods: s.pods.map((p) =>
-          p.id === id ? { ...p, status: 'Running', ready: '1/1', restarts: p.restarts + 1, cpu: '15m', mem: '32Mi' } : p
+          p.id === id ? { ...p, status: 'Running', ready: '1/1', restarts: p.restarts + 1, cpu: '15m', mem: '32Mi', ageSeconds: 0, age: '0s' } : p
         ),
       }));
       get().addToast(`Pod ${pod.name} is Running`, 'success');
@@ -202,7 +289,7 @@ export const useStore = create<AppStore>((set, get) => ({
             updates.logs = generateCrashLogs();
             updates.events = [
               ...p.events,
-              { id: genId(), namespace: p.namespace, reason: 'BackOff', message: 'Back-off restarting failed container', type: 'Warning', count: 1, firstTime: now, lastTime: now, involvedObject: p.name },
+              { id: genId(), namespace: p.namespace, reason: 'BackOff', message: 'Back-off restarting failed container', type: 'Warning', count: 1, firstTime: now, lastTime: now, involvedObject: p.name, kind: 'Pod' },
             ];
             break;
           case 'OOMKilled':
@@ -212,7 +299,7 @@ export const useStore = create<AppStore>((set, get) => ({
             updates.logs = generateOOMLogs();
             updates.events = [
               ...p.events,
-              { id: genId(), namespace: p.namespace, reason: 'OOMKilling', message: 'Container exceeded memory limit. Killing', type: 'Warning', count: 1, firstTime: now, lastTime: now, involvedObject: p.name },
+              { id: genId(), namespace: p.namespace, reason: 'OOMKilling', message: 'Container exceeded memory limit. Killing', type: 'Warning', count: 1, firstTime: now, lastTime: now, involvedObject: p.name, kind: 'Pod' },
             ];
             break;
           case 'ImagePullBackOff':
@@ -221,8 +308,8 @@ export const useStore = create<AppStore>((set, get) => ({
             updates.logs = [];
             updates.events = [
               ...p.events,
-              { id: genId(), namespace: p.namespace, reason: 'Failed', message: `Failed to pull image "${p.image}": rpc error: code = Unknown desc = failed to pull and unpack image`, type: 'Warning', count: 1, firstTime: now, lastTime: now, involvedObject: p.name },
-              { id: genId(), namespace: p.namespace, reason: 'BackOff', message: 'Back-off pulling image', type: 'Warning', count: 1, firstTime: now, lastTime: now, involvedObject: p.name },
+              { id: genId(), namespace: p.namespace, reason: 'Failed', message: `Failed to pull image "${p.image}": rpc error: code = Unknown desc = failed to pull and unpack image`, type: 'Warning', count: 1, firstTime: now, lastTime: now, involvedObject: p.name, kind: 'Pod' },
+              { id: genId(), namespace: p.namespace, reason: 'BackOff', message: 'Back-off pulling image', type: 'Warning', count: 1, firstTime: now, lastTime: now, involvedObject: p.name, kind: 'Pod' },
             ];
             break;
           case 'Pending':
@@ -232,7 +319,7 @@ export const useStore = create<AppStore>((set, get) => ({
             updates.logs = [];
             updates.events = [
               ...p.events,
-              { id: genId(), namespace: p.namespace, reason: 'FailedScheduling', message: '0/3 nodes are available: insufficient cpu. preemption: 0/3 nodes are available: 3 No preemption victims found for incoming pod.', type: 'Warning', count: 1, firstTime: now, lastTime: now, involvedObject: p.name },
+              { id: genId(), namespace: p.namespace, reason: 'FailedScheduling', message: '0/4 nodes are available: insufficient cpu. preemption: 0/4 nodes are available: 4 No preemption victims found for incoming pod.', type: 'Warning', count: 1, firstTime: now, lastTime: now, involvedObject: p.name, kind: 'Pod' },
             ];
             break;
           case 'Evicted':
@@ -241,7 +328,7 @@ export const useStore = create<AppStore>((set, get) => ({
             updates.logs = [];
             updates.events = [
               ...p.events,
-              { id: genId(), namespace: p.namespace, reason: 'Evicted', message: 'The node was low on resource: disk. Threshold quantity: 10%, available: 3%.', type: 'Warning', count: 1, firstTime: now, lastTime: now, involvedObject: p.name },
+              { id: genId(), namespace: p.namespace, reason: 'Evicted', message: 'The node was low on resource: disk. Threshold quantity: 10%, available: 3%.', type: 'Warning', count: 1, firstTime: now, lastTime: now, involvedObject: p.name, kind: 'Pod' },
             ];
             break;
           case 'NodeNotReady':
@@ -268,7 +355,7 @@ export const useStore = create<AppStore>((set, get) => ({
     get().addToast(`Pod ${pod.name} recovered`, 'success');
   },
 
-  editPodYaml: (id, _yaml) => {
+  editPodYaml: (id) => {
     const pod = get().pods.find((p) => p.id === id);
     if (!pod) return;
     get().addToast(`Changes saved to ${pod.name}`, 'success');
@@ -281,26 +368,25 @@ export const useStore = create<AppStore>((set, get) => ({
     const delta = replicas - deploy.replicas;
     set((s) => ({
       deployments: s.deployments.map((d) =>
-        d.id === id ? { ...d, replicas, readyReplicas: replicas, updatedReplicas: replicas } : d
+        d.id === id ? { ...d, replicas, readyReplicas: replicas, updatedReplicas: replicas, availableReplicas: replicas } : d
       ),
     }));
 
     // add/remove worker pods if scaling worker deployment
     if (deploy.name === 'worker' && delta !== 0) {
       if (delta < 0) {
-        const workerPods = get().pods.filter((p) => p.namespace === deploy.namespace && p.labels.app === 'worker');
+        const workerPods = get().pods.filter((p) => p.namespace === deploy.namespace && p.labels.app === 'worker' && p.status === 'Running');
         const toRemove = workerPods.slice(0, Math.abs(delta));
         toRemove.forEach((p) => {
           set((s) => ({ pods: s.pods.filter((pod) => pod.id !== p.id) }));
         });
-        // trigger the pending pod to become running if cpu freed
         const pendingPod = get().pods.find((p) => p.status === 'Pending');
         if (pendingPod) {
           setTimeout(() => {
             set((s) => ({
               pods: s.pods.map((p) =>
                 p.id === pendingPod.id
-                  ? { ...p, status: 'Running', ready: '1/1', nodeName: 'k9ssim-node-02', cpu: '220m', mem: '165Mi', failureType: undefined }
+                  ? { ...p, status: 'Running', ready: '1/1', nodeName: 'k9ssim-node-02', cpu: '220m', mem: '165Mi', failureType: undefined, ageSeconds: 0, age: '0s' }
                   : p
               ),
             }));
@@ -315,10 +401,45 @@ export const useStore = create<AppStore>((set, get) => ({
     get().fireValidation('deployment-scaled', deploy.name);
   },
 
-  editServiceYaml: (id, _yaml) => {
+  rolloutRestart: (deploymentId) => {
+    const d = get().deployments.find((x) => x.id === deploymentId);
+    if (!d) return;
+    // mark pods as terminating then re-create
+    const matchingPods = get().pods.filter((p) =>
+      p.namespace === d.namespace && Object.entries(d.selector).every(([k, v]) => p.labels[k] === v)
+    );
+    matchingPods.forEach((p) => {
+      set((s) => ({
+        pods: s.pods.map((x) => x.id === p.id ? { ...x, status: 'Terminating', ready: '0/1' } : x),
+      }));
+      setTimeout(() => {
+        set((s) => ({
+          pods: s.pods.map((x) => x.id === p.id ? { ...x, status: 'Running', ready: '1/1', restarts: x.restarts + 1, ageSeconds: 0, age: '0s' } : x),
+        }));
+      }, 1500 + Math.random() * 1500);
+    });
+    get().addToast(`Rollout restart triggered for ${d.name}`, 'info');
+  },
+
+  cordonNode: (id) => {
+    set((s) => ({
+      nodes: s.nodes.map((n) => n.id === id ? { ...n, status: 'SchedulingDisabled' } : n),
+    }));
+    const n = get().nodes.find((x) => x.id === id);
+    if (n) get().addToast(`Node ${n.name} cordoned`, 'info');
+  },
+
+  uncordonNode: (id) => {
+    set((s) => ({
+      nodes: s.nodes.map((n) => n.id === id ? { ...n, status: 'Ready' } : n),
+    }));
+    const n = get().nodes.find((x) => x.id === id);
+    if (n) get().addToast(`Node ${n.name} uncordoned`, 'success');
+  },
+
+  editServiceYaml: (id) => {
     const svc = get().services.find((s) => s.id === id);
     if (!svc) return;
-    // fix the wrong selector for scenario 3
     if (id === 'svc-api') {
       set((s) => ({
         services: s.services.map((sv) =>
@@ -331,12 +452,107 @@ export const useStore = create<AppStore>((set, get) => ({
   },
 
   addEvent: (event) => {
-    set((s) => ({ pods: s.pods.map((p) => p.name === event.involvedObject ? { ...p, events: [...p.events, event] } : p) }));
+    set((s) => ({
+      pods: s.pods.map((p) => p.name === event.involvedObject ? { ...p, events: [...p.events, event] } : p),
+      clusterEvents: [event, ...s.clusterEvents].slice(0, 200),
+    }));
+  },
+
+  tick: () => {
+    // Tick: bump ages, fluctuate metrics, occasionally bump CrashLoop restart count
+    set((s) => {
+      const tickSec = 2;
+      const updatedPods = s.pods.map((p) => {
+        const ageSeconds = p.ageSeconds + tickSec;
+        let cpu = p.cpu;
+        let mem = p.mem;
+        let restarts = p.restarts;
+
+        if (p.status === 'Running') {
+          // fluctuate CPU and mem slightly
+          const cpuNum = parseInt(p.cpu) || 0;
+          const memNum = parseInt(p.mem) || 0;
+          const cpuDelta = Math.round((Math.random() - 0.5) * Math.max(2, cpuNum * 0.1));
+          const memDelta = Math.round((Math.random() - 0.5) * Math.max(1, memNum * 0.05));
+          cpu = `${Math.max(1, cpuNum + cpuDelta)}m`;
+          mem = `${Math.max(1, memNum + memDelta)}Mi`;
+        }
+        if (p.status === 'CrashLoopBackOff' && Math.random() < 0.08) {
+          restarts = p.restarts + 1;
+        }
+        return { ...p, ageSeconds, age: fmtAge(ageSeconds), cpu, mem, restarts };
+      });
+
+      const updatedNodes = s.nodes.map((n) => {
+        const ageSeconds = n.ageSeconds + tickSec;
+        const cpuPct = Math.max(1, Math.min(95, n.cpuPct + Math.round((Math.random() - 0.5) * 4)));
+        const memPct = Math.max(1, Math.min(95, n.memPct + Math.round((Math.random() - 0.5) * 3)));
+        const cpuMillicores = Math.round(parseFloat(n.cpuCapacity) * 1000 * cpuPct / 100);
+        const memGi = (parseFloat(n.memCapacity) * memPct / 100).toFixed(1);
+        return { ...n, ageSeconds, age: fmtAge(ageSeconds), cpuPct, memPct, cpuUsage: `${cpuMillicores}m`, memUsage: `${memGi}Gi` };
+      });
+
+      const bumpAge = <T extends { ageSeconds: number; age: string }>(items: T[]): T[] =>
+        items.map((it) => ({ ...it, ageSeconds: it.ageSeconds + tickSec, age: fmtAge(it.ageSeconds + tickSec) }));
+
+      return {
+        pods: updatedPods,
+        nodes: updatedNodes,
+        namespaces: bumpAge(s.namespaces),
+        deployments: bumpAge(s.deployments),
+        services: bumpAge(s.services),
+        replicasets: bumpAge(s.replicasets),
+        statefulsets: bumpAge(s.statefulsets),
+        daemonsets: bumpAge(s.daemonsets),
+        configmaps: bumpAge(s.configmaps),
+        secrets: bumpAge(s.secrets),
+        jobs: bumpAge(s.jobs),
+        cronjobs: bumpAge(s.cronjobs),
+        ingress: bumpAge(s.ingress),
+        pvs: bumpAge(s.pvs),
+        pvcs: bumpAge(s.pvcs),
+        hpas: bumpAge(s.hpas),
+        serviceaccounts: bumpAge(s.serviceaccounts),
+        networkpolicies: bumpAge(s.networkpolicies),
+        pdbs: bumpAge(s.pdbs),
+        rolebindings: bumpAge(s.rolebindings),
+        clusterroles: bumpAge(s.clusterroles),
+        clusterrolebindings: bumpAge(s.clusterrolebindings),
+        metricsVersion: s.metricsVersion + 1,
+      };
+    });
+
+    // occasional events
+    if (Math.random() < 0.15) {
+      const pods = get().pods;
+      const runningPods = pods.filter((p) => p.status === 'Running');
+      if (runningPods.length > 0) {
+        const p = runningPods[Math.floor(Math.random() * runningPods.length)];
+        const eventTypes = [
+          { reason: 'Pulled', message: `Container image "${p.image}" already present on machine`, type: 'Normal' as const },
+          { reason: 'Healthy', message: 'readiness probe succeeded', type: 'Normal' as const },
+          { reason: 'SandboxChanged', message: 'Pod sandbox changed, it will be killed and re-created', type: 'Normal' as const },
+        ];
+        const ev = eventTypes[Math.floor(Math.random() * eventTypes.length)];
+        get().addEvent({
+          id: genId(),
+          namespace: p.namespace,
+          reason: ev.reason,
+          message: ev.message,
+          type: ev.type,
+          count: 1,
+          firstTime: 'just now',
+          lastTime: 'just now',
+          involvedObject: p.name,
+          kind: 'Pod',
+        });
+      }
+    }
   },
 
   // ui actions
   setView: (view) => {
-    set({ activeView: view, selectedIndex: 0, filterStr: '', activePanel: null, commandMode: false, filterMode: false, commandInput: '' });
+    set({ activeView: view, selectedIndex: 0, filterStr: '', activePanel: null, commandMode: false, filterMode: false, commandInput: '', markedIds: new Set(), sortKey: null });
     get().fireValidation('view-changed', view);
   },
   setSelectedIndex: (idx) => set({ selectedIndex: idx }),
@@ -350,6 +566,28 @@ export const useStore = create<AppStore>((set, get) => ({
   },
   setActiveModal: (modal) => set({ activeModal: modal }),
   setActiveNamespace: (ns) => set({ activeNamespace: ns, selectedIndex: 0 }),
+  setContext: (id) => {
+    set((s) => ({
+      contexts: s.contexts.map((c) => ({ ...c, current: c.id === id })),
+    }));
+    const c = get().contexts.find((x) => x.id === id);
+    if (c) get().addToast(`Switched context to ${c.name}`, 'success');
+  },
+  toggleMark: (id) => {
+    set((s) => {
+      const next = new Set(s.markedIds);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return { markedIds: next };
+    });
+  },
+  clearMarks: () => set({ markedIds: new Set() }),
+  setSort: (key) => {
+    set((s) => ({
+      sortKey: s.sortKey === key ? key : key,
+      sortDesc: s.sortKey === key ? !s.sortDesc : false,
+    }));
+  },
   addToast: (message, type = 'success') => {
     const id = genId();
     set((s) => ({ toasts: [...s.toasts, { id, message, type }] }));
@@ -392,7 +630,6 @@ export const useStore = create<AppStore>((set, get) => ({
         break;
       }
     }
-    // special: pod-selected validation checks the selected pod's status
     if (event === 'pod-selected' && target) {
       for (const task of scenario.tasks) {
         if (completedTaskIds.includes(task.id)) continue;

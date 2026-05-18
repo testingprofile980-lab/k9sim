@@ -6,15 +6,66 @@
   background: var(--bg-secondary);
   border-top: 1px solid var(--border);
   z-index: 50;
+  box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.4);
+}
+
+.inputRow {
+  display: flex;
+  align-items: center;
+  padding: 4px 8px;
+}
+
+.prompt {
+  color: var(--accent);
+  margin-right: 6px;
+  font-weight: bold;
 }
 
 .input {
-  width: 100%;
-  padding: 4px 8px;
+  flex: 1;
+  padding: 2px 0;
   background: transparent;
   border: none;
   color: var(--text-bright);
   font-size: 13px;
   font-family: var(--font-mono);
   outline: none;
+}
+
+.input::placeholder {
+  color: var(--text-muted);
+  opacity: 0.6;
+}
+
+.suggestions {
+  display: flex;
+  flex-direction: column;
+  border-top: 1px solid var(--border);
+  max-height: 280px;
+  overflow-y: auto;
+}
+
+.suggestion {
+  display: flex;
+  justify-content: space-between;
+  padding: 3px 14px;
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.suggestion:hover {
+  background: var(--bg-hover);
+}
+
+.selected {
+  background: var(--bg-selected);
+}
+
+.sugCmd {
+  color: var(--accent);
+  font-weight: bold;
+}
+
+.sugView {
+  color: var(--text-muted);
 }

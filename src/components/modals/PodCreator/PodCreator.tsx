@@ -29,7 +29,7 @@ export function PodCreator() {
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!name || !image) return;
-    const pod: Omit<Pod, 'id' | 'events' | 'logs' | 'age'> = {
+    const pod: Omit<Pod, 'id' | 'events' | 'logs' | 'age' | 'ageSeconds'> = {
       name: name.replace(/\s+/g, '-').toLowerCase(),
       namespace,
       image,
@@ -38,7 +38,10 @@ export function PodCreator() {
       restarts: 0,
       cpu: cpuRequest,
       mem: memRequest,
-      nodeName: nodes[0]?.name || 'k9ssim-node-02',
+      nodeName: nodes[Math.floor(Math.random() * Math.max(1, nodes.length - 1)) + 1]?.name || 'k9ssim-node-02',
+      ip: `10.244.${2 + Math.floor(Math.random() * 3)}.${50 + Math.floor(Math.random() * 100)}`,
+      qos: 'Burstable',
+      serviceAccount: 'default',
       labels: { app: name.replace(/\s+/g, '-').toLowerCase() },
       containers: [
         {

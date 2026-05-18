@@ -1,0 +1,238 @@
+.pulse {
+  flex: 1;
+  overflow: auto;
+  padding: 12px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.header {
+  display: flex;
+  align-items: baseline;
+  gap: 16px;
+}
+
+.title {
+  color: var(--text-bright);
+  font-size: 15px;
+  font-weight: bold;
+}
+
+.sub {
+  color: var(--text-muted);
+  font-size: 11px;
+}
+
+.gridTop {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1.4fr;
+  gap: 12px;
+}
+
+.card {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.cardTitle {
+  color: var(--accent);
+  font-size: 11px;
+  font-weight: bold;
+  letter-spacing: 0.5px;
+}
+
+.spark {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.sparkHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+
+.sparkLabel {
+  color: var(--text-muted);
+  font-size: 11px;
+}
+
+.sparkValue {
+  font-weight: bold;
+  font-size: 15px;
+  font-variant-numeric: tabular-nums;
+}
+
+.sparkSvg {
+  display: block;
+}
+
+.donut {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+.donutText {
+  font-size: 22px;
+  font-weight: bold;
+  fill: var(--text-bright);
+  font-family: var(--font-mono);
+}
+
+.donutSub {
+  font-size: 10px;
+  fill: var(--text-muted);
+  font-family: var(--font-mono);
+}
+
+.legend {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 4px 12px;
+  font-size: 11px;
+  width: 100%;
+}
+
+.legendItem {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--text-muted);
+}
+
+.legendDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+
+.legendCount {
+  margin-left: auto;
+  color: var(--text-bright);
+  font-weight: bold;
+}
+
+.nodeList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.nodeRow {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  grid-template-rows: auto auto;
+  gap: 4px 12px;
+  padding: 6px 8px;
+  background: var(--bg-tertiary);
+  border-radius: 3px;
+}
+
+.nodeName {
+  color: var(--text-bright);
+  font-weight: bold;
+  font-size: 12px;
+}
+
+.nodeStatus {
+  font-size: 10px;
+  font-weight: bold;
+  padding: 1px 6px;
+  border-radius: 2px;
+}
+
+.ready {
+  color: var(--green);
+  background: rgba(63, 185, 80, 0.1);
+}
+
+.notReady {
+  color: var(--red);
+  background: rgba(248, 81, 73, 0.1);
+}
+
+.bars {
+  grid-column: span 2;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.bar {
+  display: grid;
+  grid-template-columns: 26px 1fr 40px;
+  gap: 6px;
+  align-items: center;
+  font-size: 10px;
+}
+
+.barLabel {
+  color: var(--text-muted);
+}
+
+.barTrack {
+  height: 6px;
+  background: var(--bg);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.barFill {
+  height: 100%;
+  transition: width 1s ease;
+}
+
+.barPct {
+  color: var(--text);
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.gridBottom {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 12px;
+}
+
+.statCard {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.statValue {
+  color: var(--text-bright);
+  font-size: 24px;
+  font-weight: bold;
+  font-variant-numeric: tabular-nums;
+}
+
+.statLabel {
+  color: var(--text-muted);
+  font-size: 10px;
+  font-weight: bold;
+  letter-spacing: 0.5px;
+}
+
+.errorStat {
+  color: var(--red);
+}
+
+.pendingStat {
+  color: var(--yellow);
+}

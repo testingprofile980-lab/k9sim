@@ -26,14 +26,14 @@ import styles from './K9sRoot.module.css';
 export function K9sRoot() {
   const activePanel = useStore((s) => s.activePanel);
   const activeModal = useStore((s) => s.activeModal);
-  const tickMetrics = useStore((s) => s.tickMetrics);
+  const tick = useStore((s) => s.tick);
 
   useKeyboard();
 
   useEffect(() => {
-    const interval = setInterval(tickMetrics, 3000);
+    const interval = setInterval(tick, 2000);
     return () => clearInterval(interval);
-  }, [tickMetrics]);
+  }, [tick]);
 
   return (
     <div className={`${styles.root} k9s-root`}>

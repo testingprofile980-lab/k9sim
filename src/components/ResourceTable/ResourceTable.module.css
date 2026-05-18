@@ -52,6 +52,19 @@
   border-left-color: var(--selection-border);
 }
 
+.tr.marked {
+  background: rgba(188, 140, 255, 0.06);
+}
+
+.tr.marked.selected {
+  background: var(--bg-selected);
+}
+
+.markIndicator {
+  color: var(--purple);
+  font-weight: bold;
+}
+
 .empty {
   display: flex;
   align-items: center;

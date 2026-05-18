@@ -7,6 +7,7 @@
   border-bottom: 1px solid var(--border);
   flex-shrink: 0;
   overflow-x: auto;
+  position: relative;
 }
 
 .tab {
@@ -19,6 +20,7 @@
   cursor: pointer;
   transition: color 0.1s, border-color 0.1s;
   white-space: nowrap;
+  font-family: var(--font-mono);
 }
 
 .tab:hover {
@@ -28,4 +30,80 @@
 .tab.active {
   color: var(--text-bright);
   border-bottom-color: var(--accent);
+}
+
+.moreWrap {
+  position: relative;
+}
+
+.more {
+  color: var(--text);
+}
+
+.menuBackdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+}
+
+.menu {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.5);
+  min-width: 480px;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  padding: 8px;
+  gap: 8px;
+  z-index: 100;
+}
+
+.menuGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.menuGroupTitle {
+  color: var(--accent);
+  font-size: 10px;
+  font-weight: bold;
+  letter-spacing: 0.5px;
+  padding: 4px 6px 2px 6px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 2px;
+}
+
+.menuItem {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 4px 8px;
+  background: transparent;
+  border: none;
+  color: var(--text);
+  font-size: 12px;
+  font-family: var(--font-mono);
+  text-align: left;
+  cursor: pointer;
+  border-radius: 2px;
+}
+
+.menuItem:hover {
+  background: var(--bg-hover);
+  color: var(--text-bright);
+}
+
+.activeItem {
+  background: var(--bg-selected);
+  color: var(--text-bright);
+}
+
+.shortcut {
+  color: var(--text-muted);
+  font-size: 11px;
 }
